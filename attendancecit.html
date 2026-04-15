@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Intern Attendance System</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f4f4f4;
+      padding-top: 40px;
+    }
+
+    .box {
+      background: white;
+      width: 360px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      padding: 10px;
+      width: 90%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      background: #2d6cdf;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    video {
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+    }
+
+    #status {
+      font-size: 13px;
+      margin-top: 10px;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h3>Intern Attendance</h3>
+
+  <input id="workerId" placeholder="Worker ID" />
+
+  <br>
+
+  <button onclick="mark('login')">Login</button>
+  <button onclick="mark('logout')">Logout</button>
+
+  <div id="status"></div>
+
+  <video id="video" width="300" height="220" autoplay></video>
+
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const statusBox = document.getElementById("status");
+
+// CAMERA START
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => video.srcObject = stream)
+  .catch(err => alert("Camera error: " + err));
+
+// CAPTURE IMAGE
+function capture() {
+  const canvas = document.getElementById("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  return canvas.toDataURL("image/jpeg");
+}
+
+// MAIN FUNCTION
+function mark(type) {
+
+  const workerId = document.getElementById("workerId").value.trim();
+
+  if (!workerId) {
+    alert("Enter Worker ID");
+    return;
+  }
+
+  statusBox.innerText = "Getting location...";
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    statusBox.innerText = "Submitting...";
+
+    const payload = {
+      workerId: workerId,
+      type: type,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      selfie: capture()
+    };
+
+    fetch("https://script.google.com/macros/s/AKfycbwHNhBk7N1lbkdpj0t98AhoExPwElTv76RoHfs3lDeZ7WHbCMcln03lI2MQ2Y072cRtSQ/exec", {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(payload)
+    });
+
+    statusBox.innerText = "Submitted successfully";
+
+  }, () => {
+    statusBox.innerText = "Location permission denied";
+  });
+
+}
+</script>
+
+</body>
+</html>
